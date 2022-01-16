@@ -10,23 +10,49 @@ import numpy as np
 from tqdm import tqdm
 
 def tetra_vol(a, b, c, d):
-    return np.linalg.norm(np.dot(a-d, np.cross(b-d, c-d)))/6
+    # dont need to divide by 6 since it's all relative anyway
+    return np.abs(np.dot(a-d, np.cross(b-d, c-d)))
 
 # converts a cartesian coordinate to tetrahedral barycentric coordinates
 # tetra should be a 4x3 numpy array
 # point should be a 3 long numpy array
-def to_tetra_bary(tetra, point):
+def to_tetra_bary_old(tetra, point):
     result = np.zeros(4)
+    vol_dabp = tetra_vol(tetra[3], tetra[0], tetra[1], point)
     vol_abcp = tetra_vol(tetra[0], tetra[1], tetra[2], point)
-    vol_abdp = tetra_vol(tetra[0], tetra[1], tetra[3], point)
-    vol_acdp = tetra_vol(tetra[0], tetra[2], tetra[3], point)
     vol_bcdp = tetra_vol(tetra[1], tetra[2], tetra[3], point)
+    vol_cdap = tetra_vol(tetra[2], tetra[3], tetra[0], point)
     vol_total = tetra_vol(tetra[0], tetra[1], tetra[2], tetra[3])
-    result[0] = vol_abcp/vol_total
-    result[1] = vol_abdp/vol_total
-    result[2] = vol_acdp/vol_total
-    result[3] = vol_bcdp/vol_total
+    result[0] = vol_dabp/vol_total
+    result[1] = vol_abcp/vol_total
+    result[2] = vol_bcdp/vol_total
+    result[3] = vol_cdap/vol_total
     return result
+
+def sctp(a, b, c):
+    return np.dot(a, np.cross(b,c))
+
+def to_tetra_bary(tetra, point):
+    p = point
+    a = tetra[0]
+    b = tetra[1]
+    c = tetra[2]
+    d = tetra[3]
+
+    vap = p-a
+    vbp = p-b
+    vab = b-a
+    vac = c-a
+    vad = a-d
+    vbc = b-c
+    vbd = b-d
+
+    va6 = np.abs(sctp(vbp,vbd,vbc))
+    vb6 = np.abs(sctp(vap,vac,vad))
+    vc6 = np.abs(sctp(vap,vad,vab))
+    vd6 = np.abs(sctp(vap,vab,vac))
+    v6 = 1/sctp(vab,vac,vad)
+    return np.array([va6*v6, vb6*v6, vc6*v6, vd6*v6])
 
 # tetrahedronal barycentric coordinates to cartesian coordinates
 # probably could use matrices for this but i'm too stupid
@@ -73,8 +99,28 @@ cloud_tgt = load_table('test2')
 lut_res = 33
 result = np.zeros((lut_res,lut_res,lut_res))
 outfile = open('test.cube', 'w')
+outfile.write(f'LUT_3D_SIZE {lut_res}\n\n')
 
-for x, y, z in tqdm(np.ndindex(result.shape), total=lut_res**3):
+
+
+src_tetra = np.array([[1,0,0],[0,0,0],[1,1,0],[1,0,1]])
+tgt_tetra = np.array([[1,0,0],[0,0,0],[1,1,0],[1,0,1]])
+print(to_tetra_bary(src_tetra, np.array([0, 0, 0])))
+print(to_tetra_bary_old(src_tetra, np.array([0, 0, 0])))
+n=5
+for x, y, z in np.ndindex((n,n,n)):
+    point = np.array([x/(n-1),y/(n-1),z/(n-1)])
+    bary = to_tetra_bary(src_tetra, point)
+    after_point = tetra_interp(point, src_tetra, tgt_tetra)
+    print(f'{point[0]:.2f} {point[1]:.2f} {point[2]:.2f}  ->  {bary[0]:.2f} {bary[1]:.2f} {bary[2]:.2f} {bary[3]:.2f}  ->  {after_point[0]:.2f} {after_point[1]:.2f} {after_point[2]:.2f}')
+print(tetra_vol(src_tetra[0], src_tetra[1], src_tetra[2], src_tetra[3]))
+
+
+
+
+exit()
+
+for z, y, x in tqdm(np.ndindex(result.shape), total=lut_res**3):
     xf = x/(lut_res-1)
     yf = y/(lut_res-1)
     zf = z/(lut_res-1)
