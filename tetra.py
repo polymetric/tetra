@@ -1,5 +1,7 @@
+#!/bin/env python3
+
 import math
-import OpenImageIO as oiio
+#import OpenImageIO as oiio
 import OpenEXR
 import os
 import sys
@@ -12,7 +14,7 @@ def tetra_vol(a, b, c, d):
 # converts a cartesian coordinate to tetrahedral barycentric coordinates
 # tetra should be a 4x3 numpy array
 # point should be a 3 long numpy array
-def to_tetra_bary(tetra, point)
+def to_tetra_bary(tetra, point):
     result = np.zeros(4)
     vol_abcp = tetra_vol(tetra[0], tetra[1], tetra[2], point)
     vol_abdp = tetra_vol(tetra[0], tetra[1], tetra[3], point)
@@ -41,9 +43,23 @@ def tetra_bary_to_cart(tetra, bary):
 # target should be a 3 long numpy array
 def find_tetra(cloud, target):
     result = np.zeros(4, 3)
-    index = [(point, dist = ((point - target)**2).sum()) for point in cloud]
+    # point, distance
+    index = [(point, ((point - target)**2).sum()) for point in cloud]
     index.sort(key=lambda i: i[1])
     for i in range(len(index)):
         result[i] = index[i][0]
     return result
+
+def load_table(file):
+    file = open(file, 'r').read()
+    list = []
+    for i in file.split('\n'):
+        row = []
+        if i == '': continue
+        for j in i.split(' '):
+            row.append(float(j))
+        list.append(row)
+    return np.array(list)
+
+print(load_table('test1'))
 
