@@ -75,6 +75,7 @@ def unique(a):
     return len(set(a)) == len(a)
 
 # find nearest tetrahedron to target 
+# TODO completely rewrite this
 # cloud should be an Nx3 numpy array
 # obviously N should be greater than 4
 # target should be a 3 long numpy array
@@ -118,29 +119,12 @@ result = np.zeros((lut_res,lut_res,lut_res))
 outfile = open('test.cube', 'w')
 outfile.write(f'LUT_3D_SIZE {lut_res}\n\n')
 
-
-
-#src_tetra = np.array([[0,0,0],[1,1,0],[1,0,0],[1,0,1]])
-#tgt_tetra = np.array([[0,0,0],[1,1,0],[1.2,0,0],[1,0,1]])
-#n=5
-#for x, y, z in np.ndindex((n,n,n)):
-#    point = np.array([x/(n-1),y/(n-1),z/(n-1)])
-#    #point = np.array([random.random(), random.random(), random.random()])
-#    #point = np.array([0.57110176, 0.2171957, 0.1344861])
-#    bary = to_tetra_bary(src_tetra, point)
-#    after_point = tetra_interp(point, src_tetra, tgt_tetra)
-#    print(f'{point[0]:.8f} {point[1]:.8f} {point[2]:.8f}  ->  {bary[0]:.8f} {bary[1]:.8f} {bary[2]:.8f} {bary[3]:.8f}  ->  {after_point[0]:.8f} {after_point[1]:.8f} {after_point[2]:.8f}')
-#
-
-
-
-
 for z, y, x in tqdm(np.ndindex(result.shape), total=lut_res**3):
     xf = x/(lut_res-1)
     yf = y/(lut_res-1)
     zf = z/(lut_res-1)
     point = np.array([xf,yf,zf])
-#   point = np.array([random.random(), random.random(), random.random()])
+    point = np.array([random.random(), random.random(), random.random()])
     src_tetra, indices = find_tetra(cloud_src, point)
     tgt_tetra = np.array([cloud_tgt[indices[0]], cloud_tgt[indices[1]], cloud_tgt[indices[2]], cloud_tgt[indices[3]]])
     point = tetra_interp(point, src_tetra, tgt_tetra)
