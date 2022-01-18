@@ -10,6 +10,8 @@ import numpy as np
 from tqdm import tqdm
 import random
 import cProfile
+import scipy
+import scipy.spatial
 
 def tetra_vol_2(a, b, c, d):
     # dont need to divide by 6 since it's all relative anyway
@@ -74,33 +76,6 @@ def has_negatives(tetra):
 def unique(a):
     return len(set(a)) == len(a)
 
-# find nearest tetrahedron to target 
-# TODO completely rewrite this
-# cloud should be an Nx3 numpy array
-# obviously N should be greater than 4
-# target should be a 3 long numpy array
-# returns a list of tuples where 0 is the triangle and 1 is the index
-def find_tetra(cloud, target):
-    result = (np.zeros((4,3)), [])
-    # point, index, exclude
-    index = [(cloud[i], i, False) for i in range(len(cloud))]
-    point_in_tetra = False
-    while not point_in_tetra:
-        result[1].clear()
-        for i in range(4):
-            j = random.randrange(len(index))
-            result[0][i] = index[j][0] # tetras
-            result[1].append(index[j][1]) # indices
-#       print(to_tetra_bary(result[0], target))
-#       print(result[1])
-        if not has_negatives(to_tetra_bary(result[0], target)) and unique(result[1]) and tetra_vol_t(result[0]) > 0:
-            print(to_tetra_bary(result[0], target))
-            point_in_tetra = True
-#       else:
-#           print('point outside tetra, trying again')
-#   print(f'found good tetra\n{result[0]}')
-    return result
-
 def load_table(file):
     file = open(file, 'r').read()
     list = []
@@ -114,19 +89,21 @@ def load_table(file):
 
 cloud_src = load_table('test1')
 cloud_tgt = load_table('test2')
-lut_res = 3
+lut_res = 33
 result = np.zeros((lut_res,lut_res,lut_res))
 outfile = open('test.cube', 'w')
 outfile.write(f'LUT_3D_SIZE {lut_res}\n\n')
+tri = scipy.spatial.Delaunay(cloud_src)
 
 for z, y, x in tqdm(np.ndindex(result.shape), total=lut_res**3):
     xf = x/(lut_res-1)
     yf = y/(lut_res-1)
     zf = z/(lut_res-1)
     point = np.array([xf,yf,zf])
-    point = np.array([random.random(), random.random(), random.random()])
-    src_tetra, indices = find_tetra(cloud_src, point)
-    tgt_tetra = np.array([cloud_tgt[indices[0]], cloud_tgt[indices[1]], cloud_tgt[indices[2]], cloud_tgt[indices[3]]])
+    #point = np.array([random.random(), random.random(), random.random()])
+    indices = tri.simplices.take(tri.find_simplex(point), 0)
+    src_tetra = cloud_src.take(indices, 0)
+    tgt_tetra = cloud_tgt.take(indices, 0)
     point = tetra_interp(point, src_tetra, tgt_tetra)
     outfile.write(f'{point[0]} {point[1]} {point[2]}\n')
     
