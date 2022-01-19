@@ -87,8 +87,9 @@ def load_table(file):
         list.append(row)
     return np.array(list)
 
-cloud_src = load_table('test1')
-cloud_tgt = load_table('test2')
+# TODO make these one file
+cloud_src = load_table('src')
+cloud_tgt = load_table('tgt')
 lut_res = 33
 result = np.zeros((lut_res,lut_res,lut_res))
 outfile = open('test.cube', 'w')
