@@ -1,8 +1,6 @@
 #!/bin/env python3
 
 import math
-#import OpenImageIO as oiio
-import OpenEXR
 import os
 import sys
 import re
@@ -97,16 +95,20 @@ outfile.write(f'LUT_3D_SIZE {lut_res}\n\n')
 tri = scipy.spatial.Delaunay(cloud_src)
 
 for z, y, x in tqdm(np.ndindex(result.shape), total=lut_res**3):
+#for z, y, x in np.ndindex(result.shape):
     xf = x/(lut_res-1)
     yf = y/(lut_res-1)
     zf = z/(lut_res-1)
     point = np.array([xf,yf,zf])
-    #point = np.array([random.random(), random.random(), random.random()])
-    indices = tri.simplices.take(tri.find_simplex(point), 0)
-    src_tetra = cloud_src.take(indices, 0)
-    tgt_tetra = cloud_tgt.take(indices, 0)
-    point = tetra_interp(point, src_tetra, tgt_tetra)
-    outfile.write(f'{point[0]} {point[1]} {point[2]}\n')
+    tetra_index = tri.find_simplex(point)
+    point_indices = tri.simplices.take(tetra_index, 0)
+    if tetra_index == -1:
+        outfile.write(f'0 0 0\n')
+    else:
+        src_tetra = cloud_src.take(point_indices, 0)
+        tgt_tetra = cloud_tgt.take(point_indices, 0)
+        point = tetra_interp(point, src_tetra, tgt_tetra)
+        outfile.write(f'{point[0]} {point[1]} {point[2]}\n')
     
 
 
