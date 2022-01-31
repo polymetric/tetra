@@ -92,6 +92,7 @@ lut_res = 33
 result = np.zeros((lut_res,lut_res,lut_res))
 outfile = open('test.cube', 'w')
 outfile.write(f'LUT_3D_SIZE {lut_res}\n\n')
+print('triangulating data...')
 tri = scipy.spatial.Delaunay(cloud_src)
 
 for z, y, x in tqdm(np.ndindex(result.shape), total=lut_res**3):
